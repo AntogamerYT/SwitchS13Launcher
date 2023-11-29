@@ -1,11 +1,12 @@
 // Include the most common headers from the C standard library
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <string>
 #include <stdbool.h>
 #include <sys/stat.h>
 #include <switch.h>
 #include <dirent.h>
+#include <algorithm>
 
 #include "EpicGamesDAuthManager.h"
 #include "UE4CommandLineManager.h"
@@ -13,6 +14,10 @@
 // Include the main libnx system header, for Switch development
 #include <switch.h>
 #include <unistd.h>
+#include <curl/curl.h>
+
+#define VERSION "1.0.1" 
+
 #define TRACE(fmt, ...)                                          \
     printf("%s: " fmt "\n", __PRETTY_FUNCTION__, ##__VA_ARGS__); \
     consoleUpdate(NULL);
@@ -24,6 +29,51 @@ bool HasConnection()
     nifmGetInternetConnectionStatus(nullptr, nullptr, &status);
 
     return status == NifmInternetConnectionStatus_Connected;
+}
+
+// lol
+std::string ReplaceAll(std::string str, const std::string &from, const std::string &to)
+{
+    size_t start_pos = 0;
+    while ((start_pos = str.find(from, start_pos)) != std::string::npos)
+    {
+        str.replace(start_pos, from.length(), to);
+        start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
+    }
+    return str;
+}
+
+void CheckForUpdates() {
+    CURL *curl;
+    CURLcode res;
+    curl = curl_easy_init();
+
+    if(curl) {
+        std::string body;
+        curl_easy_setopt(curl, CURLOPT_URL, "https://raw.githubusercontent.com/AntogamerYT/SwitchS13Launcher/main/version");
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &body);
+        res = curl_easy_perform(curl);
+
+        if(res == CURLE_OK) {
+            int localVersion = atoi(ReplaceAll(VERSION, ".", "").c_str());
+            int remoteVersion = atoi(ReplaceAll(body, ".", "").c_str());
+
+            if (localVersion < remoteVersion) {
+                printf("There's a new version available! Please download the new release from GitHub.\n\n");
+                consoleUpdate(NULL);
+            }
+        } else {
+            printf("Couldn't check for updates.\n\n");
+            consoleUpdate(NULL);
+        }
+        curl_easy_cleanup(curl);
+    } else {
+        printf("Couldn't check for updates.\n\n");
+        consoleUpdate(NULL);
+    }
+
 }
 
 void printDialog(bool actionCancelled, string message = "") {
@@ -89,6 +139,8 @@ int main(int argc, char* argv[])
         fprintf(file, "../../../FortniteGame/FortniteGame.uproject -skippatchcheck");
     }
     fclose(file);
+
+    CheckForUpdates();
 
     printDialog(false);
 

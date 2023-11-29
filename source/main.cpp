@@ -49,14 +49,20 @@ void CheckForUpdates() {
     curl = curl_easy_init();
 
     if(curl) {
+        printf("Checking for updates...\n\n");
+        consoleUpdate(NULL);
         std::string body;
         curl_easy_setopt(curl, CURLOPT_URL, "https://raw.githubusercontent.com/AntogamerYT/SwitchS13Launcher/main/version");
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &body);
+        consoleUpdate(NULL);
         res = curl_easy_perform(curl);
 
-        if(res == CURLE_OK) {
+        long response_code;
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+
+        if(response_code == 200) {
             int localVersion = atoi(ReplaceAll(VERSION, ".", "").c_str());
             int remoteVersion = atoi(ReplaceAll(body, ".", "").c_str());
 
@@ -65,19 +71,20 @@ void CheckForUpdates() {
                 consoleUpdate(NULL);
             }
         } else {
-            printf("Couldn't check for updates.\n\n");
+            printf("Couldn't check for updates. (Request is not okay)\n\n");
             consoleUpdate(NULL);
         }
         curl_easy_cleanup(curl);
     } else {
-        printf("Couldn't check for updates.\n\n");
+        printf("Couldn't check for updates. (Curl handle creation failed)\nYou can ignore this, but make sure that this is the latest version of the launcher!\n\n");
         consoleUpdate(NULL);
     }
 
 }
 
-void printDialog(bool actionCancelled, string message = "") {
-    consoleClear();
+void printDialog(bool actionCancelled, string message = "", bool clear = true) {
+    if (clear)
+        consoleClear();
     if (actionCancelled)
     {
         printf("Action cancelled.\n\n");
@@ -88,7 +95,9 @@ void printDialog(bool actionCancelled, string message = "") {
         printf("%s\n\n", message.c_str());
     }
 
-    printf("-----------------FORTNITE S13 LAUNCHER-----------------\nMade by thisisanto <3\n\n");
+    printf("-----------------FORTNITE S13 LAUNCHER-----------------\n");
+    printf("Version %s\n", VERSION);
+    printf("Made by thisisanto <3\n\n");
 
     printf("A - Manage your account\nB - Launch Fortnite\nX - Restore CommandLine arguments\n+ - Exit\n\n");
     consoleUpdate(NULL);
@@ -142,7 +151,7 @@ int main(int argc, char* argv[])
 
     CheckForUpdates();
 
-    printDialog(false);
+    printDialog(false, "", false);
 
     while (appletMainLoop())
     {

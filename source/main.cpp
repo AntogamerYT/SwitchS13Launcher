@@ -16,7 +16,7 @@
 #include <unistd.h>
 #include <curl/curl.h>
 
-#define VERSION "1.0.1" 
+#define VERSION "1.0.2"
 
 #define TRACE(fmt, ...)                                          \
     printf("%s: " fmt "\n", __PRETTY_FUNCTION__, ##__VA_ARGS__); \
@@ -43,12 +43,14 @@ std::string ReplaceAll(std::string str, const std::string &from, const std::stri
     return str;
 }
 
-void CheckForUpdates() {
+void CheckForUpdates()
+{
     CURL *curl;
     CURLcode res;
     curl = curl_easy_init();
 
-    if(curl) {
+    if (curl)
+    {
         printf("Checking for updates...\n\n");
         consoleUpdate(NULL);
         std::string body;
@@ -62,27 +64,33 @@ void CheckForUpdates() {
         long response_code;
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
 
-        if(response_code == 200) {
+        if (response_code == 200)
+        {
             int localVersion = atoi(ReplaceAll(VERSION, ".", "").c_str());
             int remoteVersion = atoi(ReplaceAll(body, ".", "").c_str());
 
-            if (localVersion < remoteVersion) {
+            if (localVersion < remoteVersion)
+            {
                 printf("There's a new version available! Please download the new release from GitHub.\n\n");
                 consoleUpdate(NULL);
             }
-        } else {
+        }
+        else
+        {
             printf("Couldn't check for updates. (Request is not okay)\n\n");
             consoleUpdate(NULL);
         }
         curl_easy_cleanup(curl);
-    } else {
+    }
+    else
+    {
         printf("Couldn't check for updates. (Curl handle creation failed)\nYou can ignore this, but make sure that this is the latest version of the launcher!\n\n");
         consoleUpdate(NULL);
     }
-
 }
 
-void printDialog(bool actionCancelled, string message = "", bool clear = true) {
+void printDialog(bool actionCancelled, string message = "", bool clear = true)
+{
     if (clear)
         consoleClear();
     if (actionCancelled)
@@ -103,13 +111,11 @@ void printDialog(bool actionCancelled, string message = "", bool clear = true) {
     consoleUpdate(NULL);
 }
 
-
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     consoleInit(NULL);
 
     padConfigureInput(1, HidNpadStyleSet_NpadStandard);
-
 
     PadState pad;
     padInitializeDefault(&pad);
@@ -135,14 +141,16 @@ int main(int argc, char* argv[])
         return 0;
     }
     DIR *dir = opendir("sdmc:/switch/S13Launcher");
-    if(!dir) {
+    if (!dir)
+    {
         mkdir("sdmc:/switch/S13Launcher", 0777);
     }
     closedir(dir);
 
     FILE *file = fopen("sdmc:/atmosphere/contents/010025400AECE000/romfs/UE4CommandLine.txt", "r");
 
-    if (!file) {
+    if (!file)
+    {
         fclose(file);
         file = fopen("sdmc:/atmosphere/contents/010025400AECE000/romfs/UE4CommandLine.txt", "w");
         fprintf(file, "../../../FortniteGame/FortniteGame.uproject -skippatchcheck");
@@ -160,12 +168,14 @@ int main(int argc, char* argv[])
         u64 kDown = padGetButtonsDown(&pad);
 
         if (kDown & HidNpadButton_Plus)
-            break; 
+            break;
 
-        if (kDown & HidNpadButton_A) {
+        if (kDown & HidNpadButton_A)
+        {
             json dauth = GetDAuth();
 
-            if(dauth.empty()) {
+            if (dauth.empty())
+            {
                 printf("You're not authenticated to the Epic Games services yet. Do you want to authenticate?\nA - Yes\nB - No\n\n");
                 printf("NOTE: This will require you to have access to another device with an internet connection.\n\n");
                 consoleUpdate(NULL);
@@ -176,15 +186,17 @@ int main(int argc, char* argv[])
                     u64 kDown = padGetButtonsDown(&pad);
 
                     if (kDown & HidNpadButton_Plus)
-                        break; 
+                        break;
 
-                    if (kDown & HidNpadButton_A) {
+                    if (kDown & HidNpadButton_A)
+                    {
                         InitializeAuthProcess();
                         printDialog(false);
                         break;
                     }
 
-                    if (kDown & HidNpadButton_B) {
+                    if (kDown & HidNpadButton_B)
+                    {
                         consoleClear();
                         printDialog(true);
                         break;
@@ -192,7 +204,9 @@ int main(int argc, char* argv[])
 
                     consoleUpdate(NULL);
                 }
-            } else {
+            }
+            else
+            {
                 printf("You're currently authenticated as %s.\n\n", dauth["displayName"].get<std::string>().c_str());
                 printf("A - Reauthenticate\nB - Delete Credentials\n+ - Exit\n\n");
                 consoleUpdate(NULL);
@@ -203,15 +217,17 @@ int main(int argc, char* argv[])
                     u64 kDown = padGetButtonsDown(&pad);
 
                     if (kDown & HidNpadButton_Plus)
-                        break; 
+                        break;
 
-                    if (kDown & HidNpadButton_A) {
+                    if (kDown & HidNpadButton_A)
+                    {
                         InitializeAuthProcess();
                         printDialog(false);
                         break;
                     }
 
-                    if (kDown & HidNpadButton_B) {
+                    if (kDown & HidNpadButton_B)
+                    {
                         printf("Are you sure you want to delete your credentials?\nA - Yes\nB - No\n\n");
 
                         while (appletMainLoop())
@@ -221,15 +237,17 @@ int main(int argc, char* argv[])
                             u64 kDown = padGetButtonsDown(&pad);
 
                             if (kDown & HidNpadButton_Plus)
-                                break; 
+                                break;
 
-                            if (kDown & HidNpadButton_A) {
+                            if (kDown & HidNpadButton_A)
+                            {
                                 DeleteDAuth();
                                 printDialog(false, "Credentials deleted.");
                                 break;
                             }
 
-                            if (kDown & HidNpadButton_B) {
+                            if (kDown & HidNpadButton_B)
+                            {
                                 consoleClear();
                                 printDialog(true);
                                 break;
@@ -245,23 +263,26 @@ int main(int argc, char* argv[])
             }
         }
 
-        if (kDown & HidNpadButton_B) {
+        if (kDown & HidNpadButton_B)
+        {
             json dauth = GetDAuth();
-            if (dauth.empty()) {
+            if (dauth.empty())
+            {
                 printDialog(false, "You need to authenticate first.");
                 continue;
             }
 
             std::unordered_map<string, string> arguments = ParseUE4CommandLine("sdmc:/atmosphere/contents/010025400AECE000/romfs/UE4CommandLine.txt");
 
-            if (arguments["AUTH_TYPE"] != "exchangecode") 
+            if (arguments["AUTH_TYPE"] != "exchangecode")
                 storeOldUE4CommandLine(arguments);
 
             printf("Authenticating with Epic Games services...\n\n");
             consoleUpdate(NULL);
             std::string exchangeCode = getExchangeCode(dauth);
 
-            if (exchangeCode == "INVALID_DEVICE_AUTH") {
+            if (exchangeCode == "INVALID_DEVICE_AUTH")
+            {
                 printDialog(false, "Your credentials are invalid. Please reauthenticate.");
                 continue;
             }
@@ -285,28 +306,25 @@ int main(int argc, char* argv[])
             appletRequestLaunchApplication(0x010025400AECE000, NULL);
         }
 
-        if (kDown & HidNpadButton_X) {
+        if (kDown & HidNpadButton_X)
+        {
             std::unordered_map<string, string> arguments = ParseUE4CommandLine("sdmc:/switch/S13Launcher/OldCommandLine.txt");
 
-            if (arguments["failedtoopen"].empty())
+            if (arguments.empty())
             {
+                printDialog(false, "You haven't launched Fortnite yet.");
+                continue;
+            }   
 
-                SaveUE4CommandLine(RebuildUE4CommandLine(arguments));
+            SaveUE4CommandLine(RebuildUE4CommandLine(arguments));
 
-                remove("sdmc:/switch/S13Launcher/OldCommandLine.txt");
+            remove("sdmc:/switch/S13Launcher/OldCommandLine.txt");
 
-                printDialog(false, "CommandLine arguments restored.");
-            }
-            else
-            {
-                printDialog(false, "You don't have any old CommandLine arguments to restore.");
-            }
-
+            printDialog(false, "CommandLine arguments restored.");
         }
 
         consoleUpdate(NULL);
     }
-
 
     socketExit();
     nifmExit();

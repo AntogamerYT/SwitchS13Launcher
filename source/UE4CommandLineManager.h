@@ -56,7 +56,6 @@ std::unordered_map<string, string> ParseUE4CommandLine(const std::string &filePa
     }
     else
     {
-        arguments["failedtoopen"] = "true";
         return arguments;
     }
 
